@@ -3,7 +3,6 @@ import React from 'react';
 import './App.css';
 import Title from "./components/Title"
 
-
 const jsonLocalStorage = {
   setItem: (key, value) => {
     localStorage.setItem(key, JSON.stringify(value));
@@ -157,5 +156,4 @@ const App = () => {
     </div>
   );
 };
-
 export default App;
