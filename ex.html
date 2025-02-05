@@ -27,40 +27,181 @@
     }
   </style>
   <body>
-    <h1>1번째 고양이 가라사대2</h1>
-    <form>
-      <input type="text" name="name" placeholder="영어 대사를 입력해주세요" />
-      <button type="submit">생성</button>
-    </form>
-    <div class="main-card">
-      <img
-        src="https://cataas.com/cat/HSENVDU4ZMqy7KQ0/says/react"
-        alt="고양이"
-        width="400"
-      />
-      <button>🤍</button>
-    </div>
-    <ul class="favorites">
-      <li>
-        <img
-          src="https://cataas.com/cat/HSENVDU4ZMqy7KQ0/says/react"
-          alt="고양이"
-        />
-      </li>
-      <li>
-        <img
-          src="https://cataas.com/cat/HSENVDU4ZMqy7KQ0/says/react"
-          alt="고양이"
-        />
-      </li>
-      <li>
-        <img
-          src="https://cataas.com/cat/HSENVDU4ZMqy7KQ0/says/react"
-          alt="고양이"
-        />
-      </li>
-    </ul>
-    <script>
+    <div id="app"></div>
+    <script
+      src="https://unpkg.com/react@17/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script Type="text/babel">
+      
+      const jsonLocalStorage = {
+        setItem: (key, value) => {
+          localStorage.setItem(key, JSON.stringify(value));
+        },
+        getItem: (key) => {
+          return JSON.parse(localStorage.getItem(key));
+        },
+      };
+
+      const fetchCat = async (text) => {
+        const OPEN_API_DOMAIN = "https://cataas.com";
+        const response = await fetch(`${OPEN_API_DOMAIN}/cat/says/${text}?json=true`);
+        const responseJson = await response.json();
+        return `${OPEN_API_DOMAIN}/cat/${responseJson._id}/says/${text}`; // NOTE: API 스펙 변경으로 강의 영상과 다른 URL로 변경했습니다.
+      };
+
+      const Title = (props) => {
+        return <h1>{props.children}</h1>
+      };
+
+      const Form = ({updateMainCat}) => {
+
+        const [value, setValue] = React.useState("");
+        const [errorMessage, setErrorMessage] = React.useState("")
+        const includesHangul = (text) => /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/i.test(text);
+
+
+
+        function handleInputChange(e) {
+          const  userValue = (e.target.value)
+          setValue(userValue.toUpperCase())
+
+
+          setErrorMessage("")
+          // 한글이 입력되면 밑에 에러 메세지 표출
+          if (includesHangul(userValue)) {
+            setErrorMessage("한글은 검색이 불가능합니다.")
+          }
+        }
+
+        function handleFormSubmit(e) {
+          e.preventDefault();
+          setErrorMessage("")
+          // 글자가 없을때 에러 메세지 보내기
+          if (value === "") {
+            setErrorMessage("검색어를 입력해주세요.")
+          }
+          updateMainCat(value);
+        }
+
+        return (
+          <form onSubmit={handleFormSubmit}>
+          <input value={value}  type="text" onChange={handleInputChange} name="name" placeholder="영어 대사를 입력해주세요" />
+          <button type="submit" >생성</button>
+          <p style={{color:"red"}}>{errorMessage}</p>
+        </form>
+        )
+        
+      }
+
+
+      
+
+      const MainCard= ({img, handleHeartClick, alreadyFavorite}) => {
+
+        const heartIcon = alreadyFavorite ? "💖" : "🤍";
+
+        return (
+          <div className="main-card">
+            <img
+              src={img}
+              alt="고양이"
+              width="400"
+            />
+            <button onClick={handleHeartClick} >{heartIcon}</button>
+          </div>
+        )
+        
+      };
+
+      function CatItem(props) {
+        return (
+          <li>
+          <img
+            src={props.img}
+          />
+        </li>
+        )
+        
+      }
+
+      function Favorites({favorites}) {
+
+        return (
+          <ul className="favorites">
+            {favorites.map((cat) => (
+              <CatItem img={cat} key={cat} />
+            ))}
+          </ul>
+        )
+      }
+      
+
+      const App = () => {
+        const CAT1 = "https://cataas.com/cat/HSENVDU4ZMqy7KQ0/says/react";
+
+
+
+        const [counter, setCounter] = React.useState(() => {
+          return jsonLocalStorage.getItem("counter")
+        })
+
+        const [mainCat, setMainCat] = React.useState(CAT1);
+
+        const [favorites, setFavorites] = React.useState(() => {
+          return jsonLocalStorage.getItem("favorites") || []
+        })
+
+        const alreadyFavorite = favorites.includes(mainCat);
+
+        async function setInitialCat() {
+          const newCat = await fetchCat("First Cat")
+          setMainCat(newCat);
+        }
+        React.useEffect(()=> {
+          setInitialCat();
+        }, []);
+
+        async function updateMainCat(value) {
+
+          const newCat = await fetchCat(value);
+
+          setMainCat(newCat);
+
+          setCounter((prev)=> {
+            const nextCounter = prev + 1;
+            jsonLocalStorage.setItem("counter", nextCounter);
+            return nextCounter;
+          })
+        }
+
+        function handleHeartClick() {
+          const nextFavorites = [...favorites, mainCat];
+          setFavorites(nextFavorites);
+          jsonLocalStorage.setItem("favorites", nextFavorites);
+        }
+
+        const counterNumber = counter === null ? "" : counter + "번째 ";
+
+        return (
+          <div>
+            <Title>{counterNumber} 고양이 가라사대</Title>
+            <Form updateMainCat={updateMainCat} />
+            <MainCard img={mainCat} 
+            alreadyFavorite={alreadyFavorite} handleHeartClick={handleHeartClick}/>
+            <Favorites favorites={favorites}/>
+          </div>
+        )
+      }
+
+
+      const 여기다그려 =  document.querySelector("#app")
+      ReactDOM.render(<App/>, 여기다그려) 
     </script>
   </body>
 </html>

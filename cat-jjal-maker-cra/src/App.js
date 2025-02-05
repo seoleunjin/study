@@ -145,7 +145,7 @@ const App = () => {
 
   return (
     <div>
-      <Title>{counterTitle}고양이 가라사대</Title>
+      <Title>{counterTitle}고양이 가라사대2</Title>
       <Form updateMainCat={updateMainCat} />
       <MainCard
         img={mainCat}
